@@ -33,6 +33,20 @@ RSpec.feature "ManageFoos", type: :feature, :js=>true do
     end
   end
 
+  feature "disable/enable" do
+    scenario "create button disabled when no name" do
+      visit root_path
+      within(:xpath,FOO_FORM_XPATH) do     #<== waits for form
+        expect(page).to have_button("Create Foo", disabled: true)
+        expect(page).to have_field("name", :with => "")
+        fill_in("name", with: foo_state[:name])
+        #save_and_open_screenshot
+        expect(page).to have_button("Create Foo", disabled: false)
+        expect(page).to have_field("name", :with => foo_state[:name])
+      end
+    end
+  end
+
   feature "add new Foo" do
     background(:each) do
       visit root_path
@@ -44,7 +58,7 @@ RSpec.feature "ManageFoos", type: :feature, :js=>true do
       expect(page).to have_css("label", :text=>"Name:")
       expect(page).to have_css("input[name='name'][ng-model*='foo.name']")
       expect(page).to have_css("button[ng-click*='create()']", :text=>"Create Foo")
-      expect(page).to have_button("Create Foo")
+      expect(page).to have_button("Create Foo", disabled: true)
     end
 
     scenario "complete form" do
