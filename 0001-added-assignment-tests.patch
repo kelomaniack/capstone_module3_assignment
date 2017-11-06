@@ -1,0 +1,98 @@
+From 3b3a256e75b27d8f8555a4993a7193c4f8d72256 Mon Sep 17 00:00:00 2001
+From: e_konstantinidis <e.konstantinidis@app-smart.de>
+Date: Mon, 6 Nov 2017 17:18:44 +0100
+Subject: [PATCH] added assignment tests
+
+---
+ spec/factories/foobars.rb                      |  6 +++++-
+ spec/features/manage_foos_spec.rb              | 16 +++++++++++++++-
+ spec/requests/foo_api_error_reportings_spec.rb | 18 ++++++++++++++++++
+ 3 files changed, 38 insertions(+), 2 deletions(-)
+ create mode 100644 spec/requests/foo_api_error_reportings_spec.rb
+
+diff --git a/spec/factories/foobars.rb b/spec/factories/foobars.rb
+index 51a9cf4..9d80f86 100644
+--- a/spec/factories/foobars.rb
++++ b/spec/factories/foobars.rb
+@@ -8,6 +8,10 @@ FactoryGirl.define do
+     sequence(:name) {|n| "test#{n}" }
+   end
+ 
++  factory :foo_cycled_names, class: 'Foo' do
++    sequence(:name, (0..9).cycle) {|n| "name#{n}" }
++  end
++  
+   factory :foo_names, class: 'Foo' do
+     sequence(:name) {|n| ["larry", "moe", "curly"][n%3]  }
+   end
+@@ -33,7 +37,7 @@ FactoryGirl.define do
+     initialize_with { Foo.new(hash) }
+   end
+ 
+-  factory :foo, :parent=>:foo_faker do
++  factory :foo, :parent=>:foo_cycled_names do
+   end
+ 
+   factory :bar do
+diff --git a/spec/features/manage_foos_spec.rb b/spec/features/manage_foos_spec.rb
+index 397eccb..b20d24f 100644
+--- a/spec/features/manage_foos_spec.rb
++++ b/spec/features/manage_foos_spec.rb
+@@ -33,6 +33,20 @@ RSpec.feature "ManageFoos", type: :feature, :js=>true do
+     end
+   end
+ 
++  feature "disable/enable" do
++    scenario "create button disabled when no name" do
++      visit root_path
++      within(:xpath,FOO_FORM_XPATH) do     #<== waits for form
++        expect(page).to have_button("Create Foo", disabled: true)
++        expect(page).to have_field("name", :with => "")
++        fill_in("name", with: foo_state[:name])
++        #save_and_open_screenshot
++        expect(page).to have_button("Create Foo", disabled: false)
++        expect(page).to have_field("name", :with => foo_state[:name])
++      end
++    end
++  end
++
+   feature "add new Foo" do
+     background(:each) do
+       visit root_path
+@@ -44,7 +58,7 @@ RSpec.feature "ManageFoos", type: :feature, :js=>true do
+       expect(page).to have_css("label", :text=>"Name:")
+       expect(page).to have_css("input[name='name'][ng-model*='foo.name']")
+       expect(page).to have_css("button[ng-click*='create()']", :text=>"Create Foo")
+-      expect(page).to have_button("Create Foo")
++      expect(page).to have_button("Create Foo", disabled: true)
+     end
+ 
+     scenario "complete form" do
+diff --git a/spec/requests/foo_api_error_reportings_spec.rb b/spec/requests/foo_api_error_reportings_spec.rb
+new file mode 100644
+index 0000000..9f5fa68
+--- /dev/null
++++ b/spec/requests/foo_api_error_reportings_spec.rb
+@@ -0,0 +1,18 @@
++require 'rails_helper'
++
++RSpec.describe "FooApiErrorReportings", type: :request do
++  context "create a new Foo" do
++    let(:foo_state) { FactoryGirl.attributes_for(:foo) }
++
++    it "invalid Foo reports API error" do
++      jpost foos_path, :foo=>{:id=>1}
++      expect(response).to have_http_status(:bad_request)
++      expect(response.content_type).to eq("application/json") 
++
++      payload=parsed_body
++      expect(payload).to have_key("errors")
++      expect(payload["errors"]).to have_key("full_messages")
++      expect(payload["errors"]["full_messages"][0]).to include("cannot")
++    end
++  end
++end
+\ No newline at end of file
+-- 
+2.12.2
+

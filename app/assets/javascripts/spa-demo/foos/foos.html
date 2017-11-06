@@ -10,10 +10,10 @@
               required="required"/>
     </div>
 
-    <button ng-if="!foosVM.foo.id" 
-             type="submit"
-             ng-click="foosVM.create()">Create Foo</button>  
-    <div ng-if="foosVM.foo.id">
+    <button ng-if="!foosVM.foo.id" ng-disabled="!foosVM.foo.name"
+              type="submit"
+              ng-click="foosVM.create()">Create Foo</button>  
+     <div ng-if="foosVM.foo.id">
       <button type="submit"
               ng-click="foosVM.update()">Update Foo</button>
       <button type="submit"

@@ -4,6 +4,15 @@ class ApplicationController < ActionController::API
 
   rescue_from ActiveRecord::RecordNotFound, with: :record_not_found
   rescue_from Mongoid::Errors::DocumentNotFound, with: :record_not_found
+  rescue_from ActiveRecord::StatementInvalid, with: :record_invalid
+
+  def record_invalid(exception) 
+      payload = {
+        errors: { full_messages:["cannot find required param"] }
+      }
+      render :json=>payload, :status=>:bad_request
+      Rails.logger.debug exception.message
+    end
 
   protected
     def record_not_found(exception) 
@@ -14,3 +23,4 @@ class ApplicationController < ActionController::API
       Rails.logger.debug exception.message
     end
 end
+#fixed something

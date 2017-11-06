@@ -49,3 +49,4 @@ class FoosController < ApplicationController
       params.require(:foo).permit(:name)
     end
 end
+#fixed something
